@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TikTok Live Overlay</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      height: 100vh;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #container {
+      position: relative;
+      width: 420px;
+      height: 280px; /* Enough height for 3 chats + spacing */
+      margin: 20px;
+    }
+    #chat {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column-reverse;
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      transition: opacity 0.6s ease;
+    }
+    .message {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.28);
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      animation: slideIn 0.3s ease;
+      flex-shrink: 0;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #ccc;
+    }
+    .username {
+      font-weight: 700;
+      color: #222;
+    }
+    .text {
+      flex-grow: 1;
+      word-wrap: break-word;
+      font-size: 0.9rem;
+      font-weight: 500;
+      font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+      color: #111;
+    }
+    .fade-out {
+      opacity: 0;
+      transform: translateY(-10px);
+      height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden;
+      transition: all 0.5s ease;
+    }
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(15px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    #now-playing {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="chat"></div>
+    <div id="now-playing">
+      <!-- Optional Spotify widget if needed -->
+    </div>
+  </div>
+  <script>
+    const chatEl = document.getElementById("chat");
+    const maxMessages = 5; // Allow 3–4 visible at a time
+    const ws = new WebSocket(`ws://${location.host}`);
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "chat") {
+        addMessage(data);
+      }
+    };
+    function addMessage(data) {
+      const msgEl = document.createElement("div");
+      msgEl.className = "message";
+      msgEl.innerHTML = `
+        <img class="avatar" src="${data.userProfilePic}" alt="${data.user}" />
+        <div class="username">${escapeHtml(data.user)}</div>
+        <div class="text">${escapeHtml(data.message)}</div>
+      `;
+      chatEl.prepend(msgEl);
+      const messages = chatEl.querySelectorAll(".message");
+      if (messages.length > maxMessages) {
+        const oldest = messages[messages.length - 1];
+        oldest.classList.add("fade-out");
+        setTimeout(() => oldest.remove(), 600);
+      }
+    }
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.innerText = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
