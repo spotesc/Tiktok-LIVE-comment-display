@@ -1,20 +1,14 @@
 const ws = new WebSocket(`wss://${window.location.host}`);
 
-ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-
-    if (data.type === "chat") {
-        addChatMessage(`${data.uniqueId}: ${data.comment}`);
-    }
-
-    if (data.type === "gift") {
-        addChatMessage(`${data.uniqueId} sent ${data.giftName} x${data.repeatCount}`);
-    }
+ws.onopen = () => {
+  console.log("WebSocket connected");
 };
 
-function addChatMessage(msg) {
-    const chatDiv = document.getElementById("chat");
-    const el = document.createElement("div");
-    el.textContent = msg;
-    chatDiv.appendChild(el);
-}
+ws.onerror = (error) => {
+  console.error("WebSocket error:", error);
+};
+
+ws.onmessage = (event) => {
+  console.log("WebSocket message received:", event.data);
+  // existing message handling code...
+};
